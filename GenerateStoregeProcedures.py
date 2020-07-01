@@ -69,11 +69,7 @@ def GetPoceduresFromConnection():
 	cnxn = pyodbc.connect(connectionstr) # Подключение
 	cursor = cnxn.cursor()
 
-	cursor.execute("""
-	SELECT ROUTINE_NAME, RIGHT(ROUTINE_DEFINITION, len(ROUTINE_DEFINITION) - PATINDEX(N'%CREATE PROCEDURE %', ROUTINE_DEFINITION)+1) [SQL], LAST_ALTERED 
-	FROM INFORMATION_SCHEMA.ROUTINES 
-	WHERE ROUTINE_TYPE = 'PROCEDURE' AND ROUTINE_NAME LIKE N'sp_%'
-	ORDER BY ROUTINE_NAME; """)
+	cursor.execute(open('SelectSP.sql').read())
 	return cursor.fetchall()
 
 def CleanPocedure(prasedure):
@@ -112,24 +108,25 @@ def CleanPocedure(prasedure):
 		'DateChanged':prasedure[2]
 	}
 
+result = ''
 
-result = '''
-using System; 
-using System.Windows; 
-using System.Data.SqlClient;
-'''
+# result = '''
+# using System; 
+# using System.Windows; 
+# using System.Data.SqlClient;
+# '''
 
-result += '''
-namespace ProductApp.Helper
-{
-\tclass StoredProcedures
-\t{\n'''
+# result += '''
+# namespace ProductApp.Helper
+# {
+# \tclass StoredProcedures
+# \t{\n'''
 
 for row in GetPoceduresFromConnection():
 	procedure = CleanPocedure(row)
 
-	# preFunctionComment = '\n// {0} \n// SQL ({1}...)\n'.format(procedure['Title'], procedure['SQL'])
-	preFunctionComment = '\n// {0} \n'.format(procedure['Title'])
+	preFunctionComment = '\n// {0} \n// SQL ({1}...)\n'.format(procedure['Title'], procedure['SQL'])
+	# preFunctionComment = '\n// {0} \n'.format(procedure['Title'])
 
 	funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
 	functionTitleCSharp = 'public static void {0} ('.format(funcTitle)
@@ -163,16 +160,33 @@ for row in GetPoceduresFromConnection():
 	functionBodyCSharp += '\n\t\t\t);'
 	functionBodyCSharp += '\n\t\t} catch (Exception ex) { MessageBox.Show(ex.Message); }'
 	functionBodyCSharp += '\n\t}'
-	functionBodyCSharp += '\n}\n'
+	functionBodyCSharp += '\n}'
 	
-	result += preFunctionComment.replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionTitleCSharp.replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionBodyCSharp.replace('\n','\n\t\t')#.replace('\t','    ') 
+	result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
+	result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
+	result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
 
-result += '''
-\t}
-}
-'''
+
+	funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
+	functionTitleCSharp = 'public static void {0} ('.format(funcTitle)
+	if len(procedure['Params']) > 0:
+		functionTitleCSharp += 'object '
+		functionTitleCSharp += procedure['Params'][0]['name']
+		for i in procedure['Params'][1:]:
+			functionTitleCSharp += ', object '
+			functionTitleCSharp += i['name']
+	functionTitleCSharp += ')\n'
+	
+	result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
+	result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
+	result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
+
+	result += '\n\n'
+
+# result += '''
+# \t}
+# }
+# '''
 
 # print (result)
 
