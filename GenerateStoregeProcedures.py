@@ -110,18 +110,6 @@ def CleanPocedure(prasedure):
 
 result = ''
 
-# result = '''
-# using System; 
-# using System.Windows; 
-# using System.Data.SqlClient;
-# '''
-
-# result += '''
-# namespace ProductApp.Helper
-# {
-# \tclass StoredProcedures
-# \t{\n'''
-
 for row in GetPoceduresFromConnection():
 	procedure = CleanPocedure(row)
 
@@ -162,9 +150,9 @@ for row in GetPoceduresFromConnection():
 	functionBodyCSharp += '\n\t}'
 	functionBodyCSharp += '\n}'
 	
-	result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
+	result += preFunctionComment 
+	result += functionTitleCSharp 
+	result += functionBodyCSharp 
 
 
 	funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
@@ -177,17 +165,10 @@ for row in GetPoceduresFromConnection():
 			functionTitleCSharp += i['name']
 	functionTitleCSharp += ')\n'
 	
-	result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
+	result += preFunctionComment 
+	result += functionTitleCSharp 
+	result += functionBodyCSharp 
 
-	result += '\n\n'
-
-# result += '''
-# \t}
-# }
-# '''
-
-# print (result)
+	result += '\n\n' 
 
 codecs.open('{0}.cs'.format('StoredProcedures'), 'w', 'utf-8').write(result)
