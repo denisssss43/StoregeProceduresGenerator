@@ -113,7 +113,7 @@ result = ''
 for row in GetPoceduresFromConnection():
 	procedure = CleanPocedure(row)
 
-	preFunctionComment = '\n// {0} \n// SQL ({1}...)\n'.format(procedure['Title'], procedure['SQL'])
+	preFunctionComment = '\n/*\tНаименование хранимой процедуры в БД: [dbo].[{0}] \n\tSQL ({1}...) */\n'.format(procedure['Title'], procedure['SQL'].replace('@','\n\t\t@'))
 	# preFunctionComment = '\n// {0} \n'.format(procedure['Title'])
 
 	funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
@@ -150,25 +150,25 @@ for row in GetPoceduresFromConnection():
 	functionBodyCSharp += '\n\t}'
 	functionBodyCSharp += '\n}'
 	
-	result += preFunctionComment 
-	result += functionTitleCSharp 
-	result += functionBodyCSharp 
+	result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
+	result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
+	result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
 
 
-	funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
-	functionTitleCSharp = 'public static void {0} ('.format(funcTitle)
 	if len(procedure['Params']) > 0:
+		funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
+		functionTitleCSharp = 'public static void {0} ('.format(funcTitle)
 		functionTitleCSharp += 'object '
 		functionTitleCSharp += procedure['Params'][0]['name']
 		for i in procedure['Params'][1:]:
 			functionTitleCSharp += ', object '
 			functionTitleCSharp += i['name']
-	functionTitleCSharp += ')\n'
-	
-	result += preFunctionComment 
-	result += functionTitleCSharp 
-	result += functionBodyCSharp 
+		functionTitleCSharp += ')\n'
+		
+		result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
+		result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
+		result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
 
-	result += '\n\n' 
+	result += '\n\n'
 
 codecs.open('{0}.cs'.format('StoredProcedures'), 'w', 'utf-8').write(result)
