@@ -108,67 +108,62 @@ def CleanPocedure(prasedure):
 		'DateChanged':prasedure[2]
 	}
 
+with codecs.open('temp_sp.cs', 'r', 'utf-8') as read_file:
+	temp = read_file.read()
 result = ''
 
 for row in GetPoceduresFromConnection():
 	procedure = CleanPocedure(row)
 
-	preFunctionComment = '\n/*\tНаименование хранимой процедуры в БД: [dbo].[{0}] \n\tSQL ({1}...) */\n'.format(procedure['Title'], procedure['SQL'].replace('@','\n\t\t@'))
-	# preFunctionComment = '\n// {0} \n'.format(procedure['Title'])
-
-	funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
-	functionTitleCSharp = 'public static void {0} ('.format(funcTitle)
-	if len(procedure['Params']) > 0:
-		functionTitleCSharp += procedure['Params'][0]['CShType'] + '? '
-		functionTitleCSharp += procedure['Params'][0]['name']
-		for i in procedure['Params'][1:]:
-			functionTitleCSharp += ', ' + i['CShType'] + '? '
-			functionTitleCSharp += i['name']
-	functionTitleCSharp += ')\n'
+	_SP_NAME = procedure['Title'] # @_SP_NAME - наименование из бд
 	
-	functionBodyCSharp = '{'
-	functionBodyCSharp += '\n\tusing (GZEntities _db = new GZEntities(DbConnectionString.GZEntity.ConnectionString))\n\t{'
-	functionBodyCSharp += '\n\t\ttry\n\t\t{'
-	functionBodyCSharp += '\n\t\t\t_db.Database.ExecuteSqlCommand('
-	functionBodyCSharp += '\n\t\t\t\t"EXEC [dbo].[{0}]'.format(procedure['Title'])
+	_SP_CREATE_SQL = procedure['SQL'] # @_SP_CREATE_SQL - шапка SQL запроса на создание функции
+	
+	_SP_TITLE = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:] # @_SP_TITLE - Ноименование для программы
+	
+	_SP_SQL = 'EXEC [dbo].[{0}]'.format(_SP_NAME) # @_SP_SQL - Запрос вызова хранимой процедуры
+	if len(procedure['Params']) > 0:
+		_SP_SQL += ' @' + procedure['Params'][0]['Name']
+		for i in procedure['Params'][1:]: _SP_SQL += ', @' + i['Name']
+	_SP_SQL += ';'
 
 	if len(procedure['Params']) > 0:
-		functionBodyCSharp += ' @' + procedure['Params'][0]['Name']
-		for i in procedure['Params'][1:]: functionBodyCSharp += ', @' + i['Name']
-
-	functionBodyCSharp += ';"'
+		_SP_PARAMS_LIST_OBJECT = 'object ' + procedure['Params'][0]['name'] # @_SP_PARAMS_LIST_OBJECT - Список инициализируемых параметров с не четкой типизацией
+		for i in procedure['Params'][1:]: _SP_PARAMS_LIST_OBJECT += ', object ' + i['name']
 
 	if len(procedure['Params']) > 0:
-		functionBodyCSharp += ','
-		functionBodyCSharp += '\n\t\t\t\tnew[]\n\t\t\t\t{'
+		_SP_PARAM_LIST_SQL = '' # @_SP_PARAM_LIST_SQL - Список параметров для SqlParameter[]
 		for i in procedure['Params']:
-			functionBodyCSharp += '\n\t\t\t\t\tnew SqlParameter("'+str('@' + i['Name'])+'", System.Data.SqlDbType.'+i['DBType']+') { Value = (object)'+i['name']+' ?? DBNull.Value},'
-		functionBodyCSharp += '\n\t\t\t\t}'
-
-	functionBodyCSharp += '\n\t\t\t);'
-	functionBodyCSharp += '\n\t\t} catch (Exception ex) { MessageBox.Show(ex.Message); }'
-	functionBodyCSharp += '\n\t}'
-	functionBodyCSharp += '\n}'
-	
-	result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
-	result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
-
+			_SP_PARAM_LIST_SQL += 'new SqlParameter("'+str('@' + i['Name'])+'", System.Data.SqlDbType.'+i['DBType']+') { Value = (object)'+i['name']+' ?? DBNull.Value},'
+		_SP_PARAM_LIST_SQL += ''
 
 	if len(procedure['Params']) > 0:
-		funcTitle = procedure['Title'].replace('sp_', '')[0].upper() + procedure['Title'].replace('sp_', '')[1:]
-		functionTitleCSharp = 'public static void {0} ('.format(funcTitle)
-		functionTitleCSharp += 'object '
-		functionTitleCSharp += procedure['Params'][0]['name']
-		for i in procedure['Params'][1:]:
-			functionTitleCSharp += ', object '
-			functionTitleCSharp += i['name']
-		functionTitleCSharp += ')\n'
-		
-		result += preFunctionComment # .replace('\n','\n\t\t')#.replace('\t','    ')
-		result += functionTitleCSharp # .replace('\n','\n\t\t')#.replace('\t','    ')
-		result += functionBodyCSharp # .replace('\n','\n\t\t')#.replace('\t','    ') 
+		_SP_PARAMS_LIST = procedure['Params'][0]['CShType'] + '? ' + procedure['Params'][0]['name']  # @_SP_PARAMS_LIST - Список инициализируемых параметров с четкой типизацией
+		for i in procedure['Params'][1:]: _SP_PARAMS_LIST += ', ' + i['CShType'] + '? ' + i['name']
 
-	result += '\n\n'
+	if len(procedure['Params']) > 0:
+		_SP_PARAMS_NAMES_LIST = procedure['Params'][0]['name'] # @_SP_PARAMS_NAMES_LIST - Список наименований параметров
+		for i in procedure['Params'][1:]: _SP_PARAMS_NAMES_LIST += ', ' + i['name']
+
+	# print ('_SP_PARAMS_LIST_OBJECT ->',_SP_PARAMS_LIST_OBJECT)
+	# print ('_SP_PARAMS_NAMES_LIST ->',_SP_PARAMS_NAMES_LIST)
+	# print ('_SP_PARAM_LIST_SQL ->',_SP_PARAM_LIST_SQL)
+	# print ('_SP_PARAMS_LIST ->',_SP_PARAMS_LIST)
+	# print ('_SP_CREATE_SQL ->',_SP_CREATE_SQL)
+	# print ('_SP_TITLE ->',_SP_TITLE)
+	# print ('_SP_NAME ->',_SP_NAME)
+	# print ('_SP_SQL ->',_SP_SQL)
+
+	r = '\n' + temp
+	r = r.replace('@_SP_PARAMS_LIST_OBJECT',_SP_PARAMS_LIST_OBJECT)
+	r = r.replace('@_SP_PARAMS_NAMES_LIST',_SP_PARAMS_NAMES_LIST)
+	r = r.replace('@_SP_PARAM_LIST_SQL',_SP_PARAM_LIST_SQL)
+	r = r.replace('@_SP_PARAMS_LIST',_SP_PARAMS_LIST)
+	r = r.replace('@_SP_CREATE_SQL',_SP_CREATE_SQL.replace('@','\n\t\t@'))
+	r = r.replace('@_SP_TITLE',_SP_TITLE)
+	r = r.replace('@_SP_NAME',_SP_NAME)
+	r = r.replace('@_SP_SQL',_SP_SQL)
+
+	result += r.replace(str(re.search(r'(/[*])[\s\S]*?(PARAM LIST:)[\s\S]*?([*]/)', r).group(0)), '')
 
 codecs.open('{0}.cs'.format('StoredProcedures'), 'w', 'utf-8').write(result)
