@@ -142,8 +142,8 @@ for row in GetPoceduresFromConnection():
 		for i in procedure['Params'][1:]: _SP_PARAMS_LIST += ', ' + i['CShType'] + '? ' + i['name']
 
 	if len(procedure['Params']) > 0:
-		_SP_PARAMS_NAMES_LIST = procedure['Params'][0]['name'] # @_SP_PARAMS_NAMES_LIST - Список наименований параметров
-		for i in procedure['Params'][1:]: _SP_PARAMS_NAMES_LIST += ', ' + i['name']
+		_SP_PARAMS_NAMES_LIST = '(object)' +procedure['Params'][0]['name'] # @_SP_PARAMS_NAMES_LIST - Список наименований параметров
+		for i in procedure['Params'][1:]: _SP_PARAMS_NAMES_LIST += ', (object)' + i['name']
 
 	# print ('_SP_PARAMS_LIST_OBJECT ->',_SP_PARAMS_LIST_OBJECT)
 	# print ('_SP_PARAMS_NAMES_LIST ->',_SP_PARAMS_NAMES_LIST)
